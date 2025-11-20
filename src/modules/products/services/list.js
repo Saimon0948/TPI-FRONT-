@@ -8,7 +8,9 @@ export const getProducts = async (search = null, status = null, pageNumber = 1, 
     pageSize,
   });
 
-  const response = await instance.get(`api/products/admin?${queryString}`);
+  const response = await instance.get(`/products/admin`, {
+  params: { search, status, pageNumber, pageSize }
+  });
 
   return { data: response.data, error: null };
 };

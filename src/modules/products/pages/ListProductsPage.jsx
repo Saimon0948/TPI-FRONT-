@@ -30,10 +30,13 @@ function ListProductsPage() {
 
       if (error) throw error;
 
-      setTotal(data.total);
-      setProducts(data.productItems);
-    } catch (error) {
-      console.error(error);
+      setTotal(data?.total ?? 0);
+      // Garantizar que siempre se guarde un array
+      const items = Array.isArray(data?.productItems) ? data.productItems : (Array.isArray(data) ? data : []);
+      setProducts(items);
+    } catch (err) {
+      console.error(err);
+      setProducts([]); // fallback
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,7 @@ function ListProductsPage() {
         {
           loading
             ? <span>Buscando datos...</span>
-            : products.map(product => (
+            : (products || []).map(product => (
               <Card key={product.sku}>
                 <h1>{product.sku} - {product.name}</h1>
                 <p className='text-base'>Stock: {product.stockQuantity} - ${product.currentUnitPrice} - {product.isActive ? 'Activado' : 'Desactivado'}</p>
