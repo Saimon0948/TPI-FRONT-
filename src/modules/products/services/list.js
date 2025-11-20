@@ -8,7 +8,7 @@ export const getProducts = async (search = null, status = null, pageNumber = 1, 
     pageSize,
   });
 
-  const response = await instance.get(`/products/admin`, {
+  const response = await instance.get(`/api/products/admin`, {
   params: { search, status, pageNumber, pageSize }
   });
 
