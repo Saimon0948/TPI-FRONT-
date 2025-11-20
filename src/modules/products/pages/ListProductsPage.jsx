@@ -13,6 +13,27 @@ const productStatus = {
 function ListProductsPage() {
   const navigate = useNavigate();
 
+  const getFirst = (obj, keys) => {
+    for (const k of keys) {
+      if (obj?.[k] !== undefined && obj?.[k] !== null) return obj[k];
+    }
+    return undefined;
+  };
+
+  const resolvePrice = (product) => {
+    let p = getFirst(product, ['currentUnitPrice', 'unitPrice', 'price', 'priceAmount']);
+    if (p && typeof p === 'object') {
+      p = p.amount ?? p.value ?? p.price ?? undefined;
+    }
+    const n = Number(p);
+    return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+  };
+
+  const resolveStock = (product) => {
+    const s = getFirst(product, ['stockQuantity', 'stock', 'quantity', 'stockLevel']);
+    return (s === undefined || s === null || s === '') ? '0' : s;
+  };
+
   const [ searchTerm, setSearchTerm ] = useState('');
   const [ status, setStatus ] = useState(productStatus.ALL);
   const [ pageNumber, setPageNumber ] = useState(1);
@@ -23,20 +44,20 @@ function ListProductsPage() {
 
   const [loading, setLoading] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = pageNumber) => {
     try {
       setLoading(true);
-      const { data, error } = await getProducts(searchTerm, status, pageNumber, pageSize);
+      const { data, error } = await getProducts(searchTerm, status, page, pageSize);
 
       if (error) throw error;
 
       setTotal(data?.total ?? 0);
-      // Garantizar que siempre se guarde un array
       const items = Array.isArray(data?.productItems) ? data.productItems : (Array.isArray(data) ? data : []);
       setProducts(items);
+      setPageNumber(page);
     } catch (err) {
       console.error(err);
-      setProducts([]); // fallback
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -44,12 +65,14 @@ function ListProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+   
   }, [status, pageSize, pageNumber]);
 
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const handleSearch = async () => {
-    await fetchProducts();
+    
+    await fetchProducts(1);
   };
 
   return (
@@ -74,15 +97,26 @@ function ListProductsPage() {
         </div>
 
         <div className='flex flex-col sm:flex-row gap-4'>
-          <div
-            className='flex items-center gap-3'
-          >
-            <input value={searchTerm} onChange={(evt) => setSearchTerm(evt.target.value)} type="text" placeholder='Buscar' className='text-[1.3rem] w-full' />
+          <div className='flex items-center gap-3 w-full'>
+            <input
+              value={searchTerm}
+              onChange={(evt) => setSearchTerm(evt.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(); } }}
+              type="text"
+              placeholder='Buscar Productos...'
+              className='text-[1.3rem] w-full rounded border px-3 py-2'
+            />
+
             <Button className='h-11 w-11' onClick={handleSearch}>
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg>
+              🔍
             </Button>
           </div>
-          <select onChange={evt => setStatus(evt.target.value)} className='text-[1.3rem]'>
+
+          <select
+            value={status}
+            onChange={evt => { setStatus(evt.target.value); setPageNumber(1); }}
+            className='text-[1.3rem]'
+          >
             <option value={productStatus.ALL}>Todos</option>
             <option value={productStatus.ENABLED}>Habilitados</option>
             <option value={productStatus.DISABLED}>Inhabilitados</option>
@@ -90,16 +124,27 @@ function ListProductsPage() {
         </div>
       </Card>
 
-      <div className='mt-4 flex flex-col gap-4'>
+     <div className='mt-4 flex flex-col gap-4'>
         {
           loading
             ? <span>Buscando datos...</span>
-            : (products || []).map(product => (
-              <Card key={product.sku}>
-                <h1>{product.sku} - {product.name}</h1>
-                <p className='text-base'>Stock: {product.stockQuantity} - ${product.currentUnitPrice} - {product.isActive ? 'Activado' : 'Desactivado'}</p>
-              </Card>
-            ))
+            : products.length === 0
+              ? <span>No hay productos</span>
+              : products.map(product => (
+                <Card key={product.sku} className='p-4 border border-gray-200 rounded-lg'>
+                  <div className='flex justify-between items-center'>
+                    <div>
+                      <h2 className='text-lg font-semibold'>{product.name}</h2>
+                      <p className='text-sm text-gray-600'>SKU: {product.sku}</p>
+                    </div>
+                    <div className='text-right space-y-1'>
+                      <p className='text-green-600 font-bold text-xl'>${resolvePrice(product)}</p>
+                      <p className='text-blue-600 font-bold'>Stock: {resolveStock(product)}</p>
+                      <p className='text-sm'>{product.isActive ? '✓ Activo' : '✗ Inactivo'}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))
         }
       </div>
 
@@ -107,15 +152,15 @@ function ListProductsPage() {
         <button
           disabled={pageNumber === 1}
           onClick={() => setPageNumber(pageNumber - 1)}
-          className='bg-gray-200 disabled:bg-gray-100'
+          className='bg-gray-200 disabled:bg-gray-100 px-3 py-1 rounded'
         >
           Atras
         </button>
-        <span>{pageNumber} / {totalPages}</span>
+        <span className='mx-3'>{pageNumber} / {totalPages}</span>
         <button
           disabled={ pageNumber === totalPages }
           onClick={() => setPageNumber(pageNumber + 1)}
-          className='bg-gray-200 disabled:bg-gray-100'
+          className='bg-gray-200 disabled:bg-gray-100 px-3 py-1 rounded'
         >
           Siguiente
         </button>

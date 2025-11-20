@@ -1,5 +1,12 @@
-export const listOrders = async () => {
-  const response = await fetch('/api/orders', {
+export const listOrders = async ({ search = '', status = '', pageNumber = 1, pageSize = 10 } = {}) => {
+  const qs = new URLSearchParams({
+    search,
+    status,
+    pageNumber,
+    pageSize,
+  });
+
+  const response = await fetch(`/api/orders?${qs.toString()}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -9,11 +16,9 @@ export const listOrders = async () => {
 
   if (response.ok) {
     const data = await response.json();
-
     return { data, error: null };
   } else {
-    const error = await response.json();
-
+    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
     return { data: null, error };
   }
 };
