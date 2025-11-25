@@ -14,24 +14,6 @@ const orderStates = {
   DEVUELTO: 'returned',
 };
 
-const getFirst = (obj, keys) => {
-  for (const k of keys) {
-    if (obj?.[k] !== undefined && obj?.[k] !== null) return obj[k];
-  }
-  return undefined;
-};
-
-const extractItems = (data) => {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  return data.orders ?? data.items ?? data.orderItems ?? [];
-};
-
-const extractTotal = (data, items) => {
-  if (!data) return items.length;
-  return data.total ?? data.totalItems ?? data.count ?? items.length;
-};
-
 function ListOrdersPage() {
   const navigate = useNavigate();
 
@@ -41,69 +23,79 @@ function ListOrdersPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const [orders, setOrders] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(0);     // total real de órdenes
   const [loading, setLoading] = useState(false);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const resolveOrderNumber = (order) => getFirst(order, ['orderNumber,', 'number', 'id', 'orderId']) ?? '-';
-  const resolveClientName = (order) => getFirst(order, ['customerName', 'clientName', 'buyerName', 'name']) ?? '-';
-  const resolveStatus = (order) => getFirst(order, ['status', 'orderStatus', 'state']) ?? '-';
+  const resolveOrderNumber = (order) =>
+    order.orderNumber ?? order.number ?? order.id ?? '-';
 
-  const fetch = async (page = pageNumber) => {
+  const resolveClientName = (order) =>
+    order.customerName ?? order.clientName ?? order.buyerName ?? order.name ?? '-';
+
+  const resolveStatus = (order) =>
+    order.status ?? order.orderStatus ?? order.state ?? '-';
+
+  // Obtiene SOLO la página solicitada
+  const fetchPage = async (page = pageNumber) => {
     try {
       setLoading(true);
-      const { data, error } = await listOrders({ search: searchTerm, status, pageNumber: page, pageSize });
-      console.log('listOrders response:', data);
+
+      const { data, error } = await listOrders({
+        search: searchTerm,
+        status,
+        pageNumber: page,
+        pageSize,
+      });
+
+      console.log("listOrders response:", data);
+
       if (error) throw error;
 
-      const items = extractItems(data);
+      // El backend devuelve un array directo
+      setOrders(data);
 
-      const q = (searchTerm || '').trim();
-      let filtered = items;
-
-      const isLikelyId = /^[0-9a-fA-F-]{8,}$/.test(q);
-
-      if (q.length > 0) {
-        if (isLikelyId) {
-          filtered = items.filter(o => String(o.id) === q);
-        } else {
-          filtered = items.filter(o => {
-            const num = resolveOrderNumber(o);
-            return String(num).toLowerCase().includes(q.toLowerCase())
-              || String(o.id ?? '').toLowerCase().includes(q.toLowerCase());
-          });
-        }
+      // Si no sabemos el total, lo pedimos 1 vez al iniciar
+      if (page === 1 && total === 0) {
+        setTotal(
+          typeof data.total === 'number'
+            ? data.total
+            : data.length < pageSize
+              ? data.length
+              : data.length * 2 // fallback estimado
+        );
       }
 
-      setOrders(filtered);
-      setTotal(filtered.length);
       setPageNumber(page);
     } catch (err) {
-      console.error('fetch orders error', err);
+      console.error("fetch orders error", err);
       setOrders([]);
-      setTotal(0);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetch(pageNumber);
-  }, [status, pageNumber, pageSize]);
+    fetchPage(pageNumber);
+  }, [status, pageSize, pageNumber]);
 
-  const handleSearch = async () => {
-    await fetch(1);
+  const handleSearch = () => {
+    setPageNumber(1);
+    fetchPage(1);
   };
 
   return (
     <div>
       <Card>
         <div className="flex justify-between items-center mb-3">
-          <h1 className="text-3xl">Ordenes</h1>
-          <Button onClick={() => navigate('/admin/orders/create')}>Crear Orden</Button>
+          <h1 className="text-3xl">Órdenes</h1>
+          <Button onClick={() => navigate('/admin/orders/create')}>
+            Crear Orden
+          </Button>
         </div>
 
-        {/* Barra de búsqueda dentro del Card */}
+        {/* Buscador */}
         <div className="mt-4">
           <Card className="p-4 border border-gray-200 rounded-lg">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -111,40 +103,38 @@ function ListOrdersPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSearch();
-                    }
-                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   type="text"
                   placeholder="Buscar órdenes..."
-                  className="text-[1.1rem] w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="text-[1.1rem] w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <Button 
-                className="h-11 w-11 rounded-lg" onClick={handleSearch}>
-                🔍
+                <Button className="h-11 w-11 rounded-lg" onClick={handleSearch}>
+                  🔍
                 </Button>
               </div>
 
               <select
                 value={status}
-                onChange={(e) => { setStatus(e.target.value); setPageNumber(1); }}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPageNumber(1);
+                }}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
-                <option value={orderStates.ALL}>Todos</option>
-                <option value={orderStates.PENDIENTE}>Pendientes</option>
-                <option value={orderStates.PROCESADO}>En proceso</option>
-                <option value={orderStates.ENVIADO}>Enviadas</option>
-                <option value={orderStates.ENTREGADO}>Entregadas</option> 
-                <option value={orderStates.CANCELADO}>Canceladas</option>
-                <option value={orderStates.DEVUELTO}>Devueltas</option>
+                <option value="">Todos</option>
+                <option value="pending">Pendientes</option>
+                <option value="processing">En proceso</option>
+                <option value="shipped">Enviadas</option>
+                <option value="delivered">Entregadas</option>
+                <option value="cancelled">Canceladas</option>
+                <option value="returned">Devueltas</option>
               </select>
             </div>
           </Card>
         </div>
       </Card>
 
+      {/* Lista */}
       <div className="mt-4 flex flex-col gap-4">
         {loading ? (
           <span>Buscando datos...</span>
@@ -152,10 +142,7 @@ function ListOrdersPage() {
           <span>No hay órdenes</span>
         ) : (
           orders.map((order) => (
-            <Card
-              key={order.id ?? resolveOrderNumber(order)}
-              className="p-4 border border-gray-200 rounded-lg"
-            >
+            <Card key={order.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-lg font-semibold">
@@ -165,17 +152,15 @@ function ListOrdersPage() {
                     {order.email ?? order.contactEmail ?? ''}
                   </p>
                 </div>
+
                 <div className="text-right space-y-1">
                   <p className="text-sm">{resolveStatus(order)}</p>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      onClick={() =>
-                        navigate(`/admin/orders/${order.id ?? resolveOrderNumber(order)}`)
-                      }
-                    >
-                      Ver
-                    </Button>
-                  </div>
+
+                  <Button
+                    onClick={() => navigate(`/admin/orders/${order.id}`)}
+                  >
+                    Ver
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -183,20 +168,21 @@ function ListOrdersPage() {
         )}
       </div>
 
+      {/* Paginación */}
       <div className="flex justify-center items-center mt-3 gap-3">
         <button
           disabled={pageNumber === 1}
-          onClick={() => fetch(Math.max(1, pageNumber - 1))}
+          onClick={() => fetchPage(pageNumber - 1)}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
-          Atras
+          Atrás
         </button>
 
         <span>{pageNumber} / {totalPages}</span>
 
         <button
           disabled={pageNumber === totalPages}
-          onClick={() => fetch(Math.min(totalPages, pageNumber + 1))}
+          onClick={() => fetchPage(pageNumber + 1)}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Siguiente
@@ -204,7 +190,10 @@ function ListOrdersPage() {
 
         <select
           value={pageSize}
-          onChange={(evt) => { setPageNumber(1); setPageSize(Number(evt.target.value)); }}
+          onChange={(evt) => {
+            setPageNumber(1);
+            setPageSize(Number(evt.target.value));
+          }}
           className="ml-3 border border-gray-300 rounded px-2 py-1 text-sm"
         >
           <option value="5">5</option>
