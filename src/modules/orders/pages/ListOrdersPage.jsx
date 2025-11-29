@@ -23,67 +23,62 @@ function ListOrdersPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const [orders, setOrders] = useState([]);
-  const [total, setTotal] = useState(0);     // total real de órdenes
   const [loading, setLoading] = useState(false);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const resolveOrderNumber = (order) =>
     order.orderNumber ?? order.number ?? order.id ?? '-';
 
   const resolveClientName = (order) =>
-    order.customerName ?? order.clientName ?? order.buyerName ?? order.name ?? '-';
+    order.customerName || 'Sin nombre';
 
   const resolveStatus = (order) =>
     order.status ?? order.orderStatus ?? order.state ?? '-';
 
-  // Obtiene SOLO la página solicitada
-  const fetchPage = async (page = pageNumber) => {
+  // 🔹 Traer una página específica
+  const fetchPage = async (page) => {
     try {
       setLoading(true);
+      console.log('fetchPage -> page:', page);
 
       const { data, error } = await listOrders({
         search: searchTerm,
         status,
-        pageNumber: page,
+        pageNumber: page, // 👈 acá mandamos el número de página
         pageSize,
       });
 
-      console.log("listOrders response:", data);
+      console.log('listOrders response:', data);
 
       if (error) throw error;
 
-      // El backend devuelve un array directo
-      setOrders(data);
+      // Si la API devuelve un array directo
+      const ordersFromApi = Array.isArray(data)
+        ? data
+        : data.items || data.results || [];
 
-      // Si no sabemos el total, lo pedimos 1 vez al iniciar
-      if (page === 1 && total === 0) {
-        setTotal(
-          typeof data.total === 'number'
-            ? data.total
-            : data.length < pageSize
-              ? data.length
-              : data.length * 2 // fallback estimado
-        );
-      }
-
+      setOrders(ordersFromApi);
       setPageNumber(page);
     } catch (err) {
-      console.error("fetch orders error", err);
+      console.error('fetch orders error', err);
       setOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔹 Cargar primera página cuando cambian filtros o tamaño de página
   useEffect(() => {
-    fetchPage(pageNumber);
-  }, [status, pageSize, pageNumber]);
+    fetchPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, pageSize]);
 
   const handleSearch = () => {
-    setPageNumber(1);
     fetchPage(1);
   };
+
+  // 🔹 Lógica de paginación simple
+  const canGoBack = pageNumber > 1;
+  const canGoNext = !loading && orders.length === pageSize;
 
   return (
     <div>
@@ -108,7 +103,10 @@ function ListOrdersPage() {
                   placeholder="Buscar órdenes..."
                   className="text-[1.1rem] w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <Button className="h-11 w-11 rounded-lg" onClick={handleSearch}>
+                <Button
+                  className="h-11 w-11 rounded-lg"
+                  onClick={handleSearch}
+                >
                   🔍
                 </Button>
               </div>
@@ -117,7 +115,6 @@ function ListOrdersPage() {
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value);
-                  setPageNumber(1);
                 }}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
@@ -141,15 +138,23 @@ function ListOrdersPage() {
         ) : orders.length === 0 ? (
           <span>No hay órdenes</span>
         ) : (
-          orders.map((order) => (
-            <Card key={order.id} className="p-4 border border-gray-200 rounded-lg">
+          orders.map((order, index) => (
+            <Card
+              key={order.id}
+              className="p-4 border border-gray-200 rounded-lg"
+            >
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-lg font-semibold">
-                    #{resolveOrderNumber(order)} - {resolveClientName(order)}
+                    #{index + 1 + (pageNumber - 1) * pageSize} - {resolveClientName(order)}
                   </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Nº de orden: {resolveOrderNumber(order)}
+                  </p>
+
                   <p className="text-sm text-gray-600">
-                    {order.email ?? order.contactEmail ?? ''}
+                    {order.email || ''}
                   </p>
                 </div>
 
@@ -157,7 +162,9 @@ function ListOrdersPage() {
                   <p className="text-sm">{resolveStatus(order)}</p>
 
                   <Button
-                    onClick={() => navigate(`/admin/orders/${order.id}`)}
+                    onClick={() =>
+                      navigate(/admin/orders/${order.id})
+                    }
                   >
                     Ver
                   </Button>
@@ -171,17 +178,17 @@ function ListOrdersPage() {
       {/* Paginación */}
       <div className="flex justify-center items-center mt-3 gap-3">
         <button
-          disabled={pageNumber === 1}
+          disabled={!canGoBack}
           onClick={() => fetchPage(pageNumber - 1)}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Atrás
         </button>
 
-        <span>{pageNumber} / {totalPages}</span>
+        <span>Página {pageNumber}</span>
 
         <button
-          disabled={pageNumber === totalPages}
+          disabled={!canGoNext}
           onClick={() => fetchPage(pageNumber + 1)}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
@@ -191,7 +198,6 @@ function ListOrdersPage() {
         <select
           value={pageSize}
           onChange={(evt) => {
-            setPageNumber(1);
             setPageSize(Number(evt.target.value));
           }}
           className="ml-3 border border-gray-300 rounded px-2 py-1 text-sm"
@@ -205,4 +211,4 @@ function ListOrdersPage() {
   );
 }
 
-export default ListOrdersPage;
+export default ListOrdersPage;
