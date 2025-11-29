@@ -14,6 +14,8 @@ const orderStates = {
   DEVUELTO: 'returned',
 };
 
+const BACKEND_PAGE_SIZE = 50;
+
 function ListOrdersPage() {
   const navigate = useNavigate();
 
@@ -29,56 +31,94 @@ function ListOrdersPage() {
     order.orderNumber ?? order.number ?? order.id ?? '-';
 
   const resolveClientName = (order) =>
-    order.customerName || 'Sin nombre';
+    order.customerName ??
+    order.clientName ??
+    order.buyerName ??
+    order.name ??
+    '-';
 
   const resolveStatus = (order) =>
     order.status ?? order.orderStatus ?? order.state ?? '-';
 
-  // 🔹 Traer una página específica
-  const fetchPage = async (page) => {
+  const fetchAllOrders = async () => {
     try {
       setLoading(true);
-      console.log('fetchPage -> page:', page);
 
-      const { data, error } = await listOrders({
-        search: searchTerm,
-        status,
-        pageNumber: page, // 👈 acá mandamos el número de página
-        pageSize,
-      });
+      let page = 1;
+      let allOrders = [];
 
-      console.log('listOrders response:', data);
+      while (true) {
+        const { data, error } = await listOrders({
+          status,       
+          pageNumber: page,
+          pageSize: BACKEND_PAGE_SIZE,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Si la API devuelve un array directo
-      const ordersFromApi = Array.isArray(data)
-        ? data
-        : data.items || data.results || [];
+        const currentPage = Array.isArray(data) ? data : [];
 
-      setOrders(ordersFromApi);
-      setPageNumber(page);
+        allOrders = allOrders.concat(currentPage);
+
+        if (currentPage.length < BACKEND_PAGE_SIZE) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      setOrders(allOrders);
+      setPageNumber(1);
     } catch (err) {
-      console.error('fetch orders error', err);
+      console.error('fetchAllOrders error', err);
       setOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Cargar primera página cuando cambian filtros o tamaño de página
   useEffect(() => {
-    fetchPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, pageSize]);
+    fetchAllOrders();
+  }, [status]);
+
+
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedFilterStatus = status ? status.toLowerCase() : '';
+
+  const filteredOrders = orders.filter((order) => {
+    const currentStatus =
+      order.status ?? order.orderStatus ?? order.state ?? '';
+    const normalizedCurrentStatus = String(currentStatus).toLowerCase();
+
+    const matchesStatus =
+      !normalizedFilterStatus || normalizedCurrentStatus === normalizedFilterStatus;
+    if (!matchesStatus) return false;
+
+    if (!normalizedSearch) return true;
+
+    const orderNumber = String(resolveOrderNumber(order)).toLowerCase();
+    const clientName = String(resolveClientName(order)).toLowerCase();
+    const email = String(order.email ?? order.contactEmail ?? '').toLowerCase();
+
+    return (
+      orderNumber.includes(normalizedSearch) ||
+      clientName.includes(normalizedSearch) ||
+      email.includes(normalizedSearch)
+    );
+  });
+
+  const total = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const startIndex = (pageNumber - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
   const handleSearch = () => {
-    fetchPage(1);
+   
+    setPageNumber(1);
   };
-
-  // 🔹 Lógica de paginación simple
-  const canGoBack = pageNumber > 1;
-  const canGoNext = !loading && orders.length === pageSize;
 
   return (
     <div>
@@ -100,13 +140,10 @@ function ListOrdersPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   type="text"
-                  placeholder="Buscar órdenes..."
+                  placeholder="Buscar órdenes o por ID..."
                   className="text-[1.1rem] w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <Button
-                  className="h-11 w-11 rounded-lg"
-                  onClick={handleSearch}
-                >
+                <Button className="h-11 w-11 rounded-lg" onClick={handleSearch}>
                   🔍
                 </Button>
               </div>
@@ -115,6 +152,7 @@ function ListOrdersPage() {
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value);
+                  setPageNumber(1);
                 }}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
@@ -135,61 +173,101 @@ function ListOrdersPage() {
       <div className="mt-4 flex flex-col gap-4">
         {loading ? (
           <span>Buscando datos...</span>
-        ) : orders.length === 0 ? (
+        ) : paginatedOrders.length === 0 ? (
           <span>No hay órdenes</span>
         ) : (
-          orders.map((order, index) => (
-            <Card
-              key={order.id}
-              className="p-4 border border-gray-200 rounded-lg"
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-semibold">
-                    #{index + 1 + (pageNumber - 1) * pageSize} - {resolveClientName(order)}
-                  </h2>
+          paginatedOrders.map((order, index) => {
 
-                  <p className="text-xs text-gray-500">
-                    Nº de orden: {resolveOrderNumber(order)}
-                  </p>
+            // Número visual (#1, #2, #3…) según la página
+            const displayNumber = (pageNumber - 1) * pageSize + index + 1;
 
-                  <p className="text-sm text-gray-600">
-                    {order.email || ''}
-                  </p>
+            return (
+              <Card
+                key={order.id}
+                className="p-5 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-150"
+              >
+                <div className="flex justify-between items-center">
+
+                  {/* Izquierda: Nombre + ID + Email */}
+                  <div className="flex flex-col">
+                    
+                    {/* Nombre del cliente + número visual */}
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      #{displayNumber} — {resolveClientName(order)}
+                    </h2>
+
+                    {/* ID de orden */}
+                    <p className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium text-gray-700">
+                        ID de orden:
+                      </span>{" "}
+                      {resolveOrderNumber(order)}
+                    </p>
+
+                    {/* Email */}
+                    <p className="text-sm text-gray-600">
+                      {order.email ?? order.contactEmail ?? '—'}
+                    </p>
+                  </div>
+
+                  {/* Derecha: Estado + botón */}
+                  <div className="flex flex-col items-end gap-2">
+
+                    {/* Badge de estado */}
+                    <span
+                      className={`
+                        text-sm px-3 py-1 rounded-full font-medium
+                        ${
+                          resolveStatus(order) === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : resolveStatus(order) === "processing"
+                            ? "bg-blue-100 text-blue-700"
+                            : resolveStatus(order) === "shipped"
+                            ? "bg-purple-100 text-purple-700"
+                            : resolveStatus(order) === "delivered"
+                            ? "bg-green-100 text-green-700"
+                            : resolveStatus(order) === "cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : resolveStatus(order) === "returned"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-gray-200 text-gray-700"
+                        }
+                      `}
+                    >
+                      {resolveStatus(order)}
+                    </span>
+
+                    <Button
+                      onClick={() => navigate(`/admin/orders/${order.id}`)}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg"
+                    >
+                      Ver
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="text-right space-y-1">
-                  <p className="text-sm">{resolveStatus(order)}</p>
-
-                  <Button
-                    onClick={() =>
-                      navigate(/admin/orders/${order.id})
-                    }
-                  >
-                    Ver
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
       </div>
 
       {/* Paginación */}
       <div className="flex justify-center items-center mt-3 gap-3">
         <button
-          disabled={!canGoBack}
-          onClick={() => fetchPage(pageNumber - 1)}
+          disabled={pageNumber === 1}
+          onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Atrás
         </button>
 
-        <span>Página {pageNumber}</span>
+        <span>{pageNumber} / {totalPages}</span>
 
         <button
-          disabled={!canGoNext}
-          onClick={() => fetchPage(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
+          onClick={() =>
+            setPageNumber((p) => Math.min(totalPages, p + 1))
+          }
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Siguiente
@@ -198,6 +276,7 @@ function ListOrdersPage() {
         <select
           value={pageSize}
           onChange={(evt) => {
+            setPageNumber(1);
             setPageSize(Number(evt.target.value));
           }}
           className="ml-3 border border-gray-300 rounded px-2 py-1 text-sm"
@@ -211,4 +290,4 @@ function ListOrdersPage() {
   );
 }
 
-export default ListOrdersPage;
+export default ListOrdersPage;
