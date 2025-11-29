@@ -309,7 +309,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
               <Button
                 type="button"
                 variant="secondary"
-                onClick={openRegister}
+                onClick={()=> navigate('/signup')}
                 className="px-4 py-2 text-sm"
               >
                 Registrarse
@@ -377,8 +377,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   <Button
                     type="button"
                     variant="default"
-                    onClick={() => {
-                      navigate("/login");
+                    onClick={() => {openLogin, 
                       setMobileMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 text-sm"
@@ -388,8 +387,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => {
-                      navigate("/register");
+                    onClick={() => {openRegister,
                       setMobileMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 text-sm"
@@ -548,7 +546,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
         </Modal>
 
         <Modal isOpen={isRegisterOpen} onClose={closeAll}>
-          <RegisterForm />
+          <RegisterForm isModal={true} />
         </Modal>
       </div>
     </div>

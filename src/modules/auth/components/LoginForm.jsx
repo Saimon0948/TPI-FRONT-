@@ -5,8 +5,24 @@ import Input from '../../shared/components/Input';
 import Button from '../../shared/components/Button';
 import useAuth from '../hook/useAuth';
 import { frontendErrorMessage } from '../helpers/backendError';
+import RegisterForm from './RegisterForm';
+import Modal from '../../shared/components/Modal';
 
 function LoginForm({onClose}) {
+
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+ 
+  const openRegister = () => {
+    setIsLoginOpen(false);
+    setIsRegisterOpen(true);
+  };
+
+  const closeAll = () => {
+    setIsLoginOpen(false);
+    setIsRegisterOpen(false);
+  };
   const [errorMessage, setErrorMessage] = useState('');
   const {
     register,
@@ -85,9 +101,13 @@ function LoginForm({onClose}) {
       />
 
       <Button type='submit'>Iniciar Sesión</Button>
-      <Button variant='secondary' onClick={() => navigate('/register')}>Registrar Usuario</Button>
+      <Button variant='secondary' onClick={openRegister}>Registrar Usuario</Button>
       {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
     </form>
+
+    <Modal isOpen={isRegisterOpen} onClose={closeAll}>
+      <RegisterForm isModal={true} onClose={closeAll} />
+    </Modal>
     </div>
   );
 };

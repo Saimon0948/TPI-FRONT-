@@ -7,7 +7,7 @@ import Button from '../../shared/components/Button';
 import { frontendErrorMessage } from '../helpers/backendError';
 import { registerUser } from '../services/register';
 
-function RegisterForm({ onClose, onSwitchToLogin }) {
+function RegisterForm({ onClose, onSwitchToLogin, isModal = false }) {
 
      const [errorMessage, setErrorMessage] = useState('');
     const {
@@ -15,7 +15,7 @@ function RegisterForm({ onClose, onSwitchToLogin }) {
       handleSubmit,
       formState: { errors },
       watch,
-    } = useForm({ defaultValues: { username: '', email: '', role: '', password: '', confirmPassword: '' } });
+    } = useForm({ defaultValues: { username: '', email: '', role: isModal ? 'customer' : '', password: '', confirmPassword: '' } });
 
   const navigate = useNavigate();
 
@@ -65,7 +65,7 @@ function RegisterForm({ onClose, onSwitchToLogin }) {
   return (
     <div className='relative'>
 
-        {onClose && (
+        {!isModal && (
             <button
             type='button'
             onClick={() => navigate(-1)}
@@ -106,18 +106,20 @@ function RegisterForm({ onClose, onSwitchToLogin }) {
           error={errors.email?.message}
         />
 
-        <div className='flex flex-col h-20'>
-          <label>Rol</label>
-          <select
-            className={errors.role ? 'border-red-400' : ''}
-            {...register('role', { required: 'Seleccione un rol' })}
-          >
-            <option value=''>Seleccione...</option>
-            <option value='user'>customer</option>
-            <option value='admin'>admin</option>
-          </select>
-          {errors.role && <p className='text-red-500 text-base sm:text-xs'>{errors.role.message}</p>}
-        </div>
+        {!isModal && (
+          <div className='flex flex-col h-20'>
+            <label>Rol</label>
+            <select
+              className={errors.role ? 'border-red-400' : ''}
+              {...register('role', { required: 'Seleccione un rol' })}
+            >
+              <option value=''>Seleccione...</option>
+              <option value='customer'>customer</option>
+              <option value='admin'>admin</option>
+            </select>
+            {errors.role && <p className='text-red-500 text-base sm:text-xs'>{errors.role.message}</p>}
+          </div>
+        )}
            
 
         
