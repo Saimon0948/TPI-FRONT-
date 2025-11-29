@@ -7,54 +7,55 @@ import ListOrdersPage from './modules/orders/pages/ListOrdersPage';
 import Home from './modules/home/pages/Home';
 import ListProductsPage from './modules/products/pages/ListProductsPage';
 import CreateProductPage from './modules/products/pages/CreateProductPage';
+import CustomerHome from './modules/customer/pages/CustomerHome';
 
 function App() {
   const router = createBrowserRouter([
-    {
-      path: '/',
-      element: <><Outlet /></>,
-      children: [
-        {
-          path: '/',
-          element: <>Listado de productos</>,
-        },
-        {
-          path: '/cart',
-          element: <>Carrito de compras</>,
-        },
-      ],
-    },
-    {
-      path: '/login',
-      element: <LoginPage />,
-    },
-    {
-      path: '/admin',
-      element: (
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      ),
-      children: [
-        {
-          path: '/admin/home',
-          element: <Home />,
-        },
-        {
-          path: '/admin/products',
-          element: <ListProductsPage />,
-        },
-        {
-          path: '/admin/products/create',
-          element: <CreateProductPage />,
-        },
-        {
-          path: '/admin/orders',
-          element: <ListOrdersPage />,
-        },
-      ],
-    },
-  ]);
+  {
+    path: '/',
+    element: <Outlet />,
+    children: [
+      {
+        index: true, // ruta '/'
+        element: <CustomerHome />,
+      },
+      {
+        path: 'cart',
+        element: <>Carrito de compras</>, // luego irá <CartPage />
+      },
+    ],
+  },
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: '/admin/home',
+        element: <Home />,
+      },
+      {
+        path: '/admin/products',
+        element: <ListProductsPage />,
+      },
+      {
+        path: '/admin/products/create',
+        element: <CreateProductPage />,
+      },
+      {
+        path: '/admin/orders',
+        element: <ListOrdersPage />,
+      },
+    ],
+  },
+]);
 
   return (
     <AuthProvider>
