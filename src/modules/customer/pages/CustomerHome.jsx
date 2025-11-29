@@ -53,6 +53,7 @@ const CustomerHome = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [quantities, setQuantities] = useState({}); // Estado para cantidades por producto
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Estado para menú móvil
 
   const navigate = useNavigate();
 
@@ -147,11 +148,16 @@ const CustomerHome = () => {
   const handleAddToCart = (product) => {
     const productId = getProductId(product);
     const quantity = quantities[productId] || 0;
-    const finalQuantity = quantity > 0 ? quantity : 1; // Si es 0, agregar 1 por defecto
-    
+
+    if (quantity <= 0) {
+      setError("Seleccioná una cantidad mayor a 0.");
+      setTimeout(() => setError(""), 2000);
+      return;
+    }
+
     // Validar stock disponible
     const availableStock = getAvailableStock(product);
-    if (finalQuantity > availableStock) {
+    if (quantity > availableStock) {
       setError(`No hay suficiente stock disponible. Stock disponible: ${availableStock}`);
       setTimeout(() => setError(""), 3000);
       return;
@@ -162,7 +168,7 @@ const CustomerHome = () => {
 
       let nextCart;
       if (existing) {
-        const newTotalQuantity = existing.quantity + finalQuantity;
+        const newTotalQuantity = existing.quantity + quantity;
         // Validar nuevamente antes de actualizar
         if (newTotalQuantity > getProductStock(product)) {
           setError(`No se puede agregar. La cantidad total excedería el stock disponible (${getProductStock(product)} unidades)`);
@@ -181,7 +187,7 @@ const CustomerHome = () => {
             productId: productId,
             name: getProductName(product),
             unitPrice: getProductPrice(product),
-            quantity: finalQuantity,
+            quantity,
           },
         ];
       }
@@ -235,7 +241,7 @@ const CustomerHome = () => {
               </nav>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar - Siempre visible */}
             <div className="flex-1 max-w-md mx-4">
               <form onSubmit={(e) => e.preventDefault()} className="relative">
                 <input
@@ -266,8 +272,8 @@ const CustomerHome = () => {
               </form>
             </div>
 
-            {/* Auth Buttons */}
-            <div className="flex items-center gap-2">
+            {/* Auth Buttons - Desktop */}
+            <div className="hidden md:flex items-center gap-2">
               <Button
                 type="button"
                 variant="default"
@@ -285,7 +291,91 @@ const CustomerHome = () => {
                 Registrarse
               </Button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 pt-4 pb-4">
+              <nav className="flex flex-col gap-2">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-gray-900"
+                >
+                  Productos
+                </Link>
+                <Link
+                  to="/cart"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  Carrito de compras ({totalItemsInCart})
+                </Link>
+                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => {
+                      navigate("/login");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm"
+                  >
+                    Iniciar Sesión
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      navigate("/register");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm"
+                  >
+                    Registrarse
+                  </Button>
+                </div>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
@@ -389,7 +479,7 @@ const CustomerHome = () => {
                             <Button
                               type="button"
                               onClick={() => handleAddToCart(product)}
-                              disabled={availableStock === 0}
+                              disabled={availableStock === 0 || quantity <= 0}
                               className="flex-1 px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {availableStock === 0 ? "Sin stock" : "Agregar"}
