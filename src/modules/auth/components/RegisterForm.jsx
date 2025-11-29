@@ -15,7 +15,7 @@ function RegisterForm() {
       handleSubmit,
       formState: { errors },
       watch,
-    } = useForm({ defaultValues: { username: '', mail: '', role: '', password: '', confirmPassword: '' } });
+    } = useForm({ defaultValues: { username: '', email: '', role: '', password: '', confirmPassword: '' } });
 
   const navigate = useNavigate();
 
@@ -24,7 +24,7 @@ function RegisterForm() {
       const payload = {
         username: formData.username,
         password: formData.password,
-        mail: formData.mail,
+        email: formData.email,
         role: formData.role,
         
       };
@@ -82,15 +82,15 @@ function RegisterForm() {
         />
 
         <Input
-          label='Mail'
-          {...register('mail', {
-            required: 'Mail es obligatorio',
+          label='Email'
+          {...register('email', {
+            required: 'Email es obligatorio',
             validate: (value) => {
               const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               return emailRegex.test(value) || 'Email no es válido';
             },
           })}
-          error={errors.mail?.message}
+          error={errors.email?.message}
         />
 
         <div className='flex flex-col h-20'>
