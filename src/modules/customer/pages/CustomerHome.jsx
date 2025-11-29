@@ -3,9 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { getCustomerProducts } from "../services/products";
 import Card from "../../shared/components/Card";
 import Button from "../../shared/components/Button";
+import Modal from "../../shared/components/Modal";
+import RegisterForm from "../../auth/components/RegisterForm";
+import LoginForm from "../../auth/components/LoginForm";
 
 const CART_KEY = "cart";
 const PAGE_SIZE = 8; // 4 columnas x2 filas
+
 
 // Helper functions para acceder a los campos del producto
 function getProductId(product) {
@@ -46,6 +50,26 @@ function saveCart(cart) {
 }
 
 const CustomerHome = () => {
+  
+//Modales de Login y Register
+const [isLoginOpen, setIsLoginOpen] = useState(false);
+const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+  const openLogin = () => {
+    setIsRegisterOpen(false);
+    setIsLoginOpen(true);
+  };
+
+  const openRegister = () => {
+    setIsLoginOpen(false);
+    setIsRegisterOpen(true);
+  };
+
+  const closeAll = () => {
+    setIsLoginOpen(false);
+    setIsRegisterOpen(false);
+  };
+
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState(getInitialCart);
   const [search, setSearch] = useState("");
@@ -277,7 +301,7 @@ const CustomerHome = () => {
               <Button
                 type="button"
                 variant="default"
-                onClick={() => navigate("/login")}
+                onClick= {openLogin}
                 className="px-4 py-2 text-sm"
               >
                 Iniciar Sesión
@@ -285,13 +309,13 @@ const CustomerHome = () => {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => navigate("/register")}
+                onClick={openRegister}
                 className="px-4 py-2 text-sm"
               >
                 Registrarse
               </Button>
             </div>
-
+           
             {/* Mobile Menu Button */}
             <button
               type="button"
@@ -517,6 +541,15 @@ const CustomerHome = () => {
             )}
           </>
         )}
+
+        {/* Modales de Autenticación */}
+        <Modal isOpen={isLoginOpen} onClose={closeAll}>
+          <LoginForm />
+        </Modal>
+
+        <Modal isOpen={isRegisterOpen} onClose={closeAll}>
+          <RegisterForm />
+        </Modal>
       </div>
     </div>
   );

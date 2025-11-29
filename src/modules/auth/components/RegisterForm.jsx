@@ -7,7 +7,7 @@ import Button from '../../shared/components/Button';
 import { frontendErrorMessage } from '../helpers/backendError';
 import { registerUser } from '../services/register';
 
-function RegisterForm() {
+function RegisterForm({ onClose, onSwitchToLogin }) {
 
      const [errorMessage, setErrorMessage] = useState('');
     const {
@@ -31,8 +31,19 @@ function RegisterForm() {
 
       const { data, error } = await registerUser(payload);
 
+
+      if (onClose) {   //Para el Modal
+         
+         if(onSwitchToLogin) {
+             onSwitchToLogin(); 
+         } else {
+             onClose();
+         }
+      } else {
+         navigate('/login');
+      }
       if (error) {
-        // try to pick a friendly message from backend
+        
         if (error?.response?.data?.code) {
           setErrorMessage(frontendErrorMessage[error.response.data.code] || 'Error al registrar');
         } else {
@@ -42,7 +53,7 @@ function RegisterForm() {
         return;
       }
 
-      // Registration successful — redirect to login page
+      
       navigate('/login');
     } catch (err) {
       console.error(err);
@@ -54,13 +65,15 @@ function RegisterForm() {
   return (
     <div className='relative'>
 
-        <button
-        type='button'
-        onClick={() => navigate(-1)}
-        className='absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl font-bold'
-     >
-        ✕
-      </button>
+        {onClose && (
+            <button
+            type='button'
+            onClick={() => navigate(-1)}
+            className='absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl font-bold'
+            >
+            ✕
+            </button>
+        )}
 
         <form className='
         flex

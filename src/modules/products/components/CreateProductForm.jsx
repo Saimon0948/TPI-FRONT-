@@ -101,8 +101,15 @@ function CreateProductForm() {
             },
           })}
         />
-        <div className='sm:text-end'>
+        <div className='sm:text-end flex sm:justify-end sm:items-center sm:gap-2'>
           <Button type='submit' className='w-full sm:w-fit'>Crear Producto</Button>
+          <Button
+        type='button'
+        onClick={() => navigate(-1)}
+        className=' sm:w-fit left-2 '
+     >
+        Volver
+      </Button>
         </div>
         {errorBackendMessage && <span className='text-red-500'>{errorBackendMessage}</span>}
       </form>

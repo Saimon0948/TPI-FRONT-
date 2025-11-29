@@ -6,7 +6,7 @@ import Button from '../../shared/components/Button';
 import useAuth from '../hook/useAuth';
 import { frontendErrorMessage } from '../helpers/backendError';
 
-function LoginForm() {
+function LoginForm({onClose}) {
   const [errorMessage, setErrorMessage] = useState('');
   const {
     register,
@@ -21,7 +21,12 @@ function LoginForm() {
   const onValid = async (formData) => {
     try {
       const { error } = await singin(formData.username, formData.password);
-
+      if (onClose) {
+        onClose(); 
+        navigate('/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
       if (error) {
         setErrorMessage(error.frontendErrorMessage);
 
@@ -40,13 +45,16 @@ function LoginForm() {
 
   return (
     <div className='relative'>
-      <button
-        type='button'
-        onClick={() => navigate(-1)}
-        className='absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl font-bold'
-     >
-        ✕
-      </button>
+      
+        {onClose && (
+          <button
+            type='button'
+            onClick={() => navigate(-1)}
+            className='absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl font-bold'
+          >
+            ✕
+          </button>
+        )}
     <form className='
         flex
         flex-col
