@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { data, useNavigate } from 'react-router-dom';
 import Input from '../../shared/components/Input';
 import Button from '../../shared/components/Button';
 import useAuth from '../hook/useAuth';
@@ -34,22 +34,48 @@ function LoginForm({onClose}) {
 
   const { singin } = useAuth();
 
+  const parseJwt = (token) => {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch {
+      return null;
+    }
+  };
+
   const onValid = async (formData) => {
     try {
-      const { error } = await singin(formData.username, formData.password);
-      if (onClose) {
-        onClose(); 
-        navigate('/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
-      if (error) {
-        setErrorMessage(error.frontendErrorMessage);
+      const { data, error } = await singin(formData.username, formData.password);
 
+      if (error) {
+        setErrorMessage(error.frontendErrorMessage || error.message || 'Error al iniciar sesión');
         return;
       }
 
-      navigate('/admin/home');
+      
+      let role = null;
+//verficiar el role del usuario para redirigirlo y token
+      if (data) {
+        if (typeof data === 'string') {
+          const payload = parseJwt(data);
+          role = payload?.role ?? payload?.roles?.[0] ?? null;
+        } else {
+          role = data.user?.role ?? data.role ?? data.roles?.[0] ?? null;
+          
+          const token = data.token ?? data.accessToken ?? null;
+          if (!role && token) {
+            const payload = parseJwt(token);
+            role = payload?.role ?? payload?.roles?.[0] ?? null;
+          }
+        }
+      }
+
+     
+      if (onClose) onClose();
+
+      if (role === 'admin') navigate('/admin/home');
+      else navigate('/');
+
     } catch (error) {
       if (error?.response?.data?.code) {
         setErrorMessage(frontendErrorMessage[error?.response?.data?.code]);
@@ -100,7 +126,9 @@ function LoginForm({onClose}) {
         error={errors.password?.message}
       />
 
-      <Button type='submit'>Iniciar Sesión</Button>
+      <Button type='submit'>
+                Iniciar Sesión
+      </Button>
       <Button variant='secondary' onClick={openRegister}>Registrar Usuario</Button>
       {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
     </form>

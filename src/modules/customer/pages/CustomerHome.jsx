@@ -377,7 +377,8 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   <Button
                     type="button"
                     variant="default"
-                    onClick={() => {openLogin, 
+                    onClick={() => {
+                      openLogin();
                       setMobileMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 text-sm"
@@ -387,7 +388,8 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => {openRegister,
+                    onClick={() => {
+                      navigate('/signup');
                       setMobileMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 text-sm"

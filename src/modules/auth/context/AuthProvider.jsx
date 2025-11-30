@@ -22,10 +22,15 @@ function AuthProvider({ children }) {
       return { error };
     }
 
-    localStorage.setItem('token', data);
+    // data may be a token string or an object containing token and user info
+    let token = null;
+    if (typeof data === 'string') token = data;
+    else token = data?.token ?? data?.accessToken ?? null;
+
+    if (token) localStorage.setItem('token', token);
     setIsAuthenticated(true);
 
-    return { error: null };
+    return { data, error: null };
   };
 
   return (
