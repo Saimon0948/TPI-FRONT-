@@ -125,10 +125,7 @@ function ListOrdersPage() {
       <Card>
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-3xl">Órdenes</h1>
-          <Button onClick={() => navigate('/admin/orders/create')}>
-            Crear Orden
-          </Button>
-        </div>
+                  </div>
 
         {/* Buscador */}
         <div className="mt-4">
@@ -237,12 +234,7 @@ function ListOrdersPage() {
                       {resolveStatus(order)}
                     </span>
 
-                    <Button
-                      onClick={() => navigate(`/admin/orders/${order.id}`)}
-                      className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      Ver
-                    </Button>
+                    
                   </div>
                 </div>
               </Card>

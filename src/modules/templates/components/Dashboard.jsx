@@ -112,7 +112,7 @@ function Dashboard() {
               <NavLink
                 to='/signup'
                 className={getLinkStyles}
-              >Registrar Admin</NavLink>
+              >Registrar Usuario</NavLink>
             </li>
           </ul>
           <hr className='opacity-15 mt-4' />
