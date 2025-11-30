@@ -88,7 +88,7 @@ function LoginForm({onClose}) {
   return (
     <div className='relative'>
       
-        {onClose && (
+        {!onClose && (
           <button
             type='button'
             onClick={() => navigate(-1)}

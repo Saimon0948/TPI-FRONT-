@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import useAuth from '../../auth/hook/useAuth';
 import { getCustomerProducts } from "../services/products";
 import Card from "../../shared/components/Card";
 import Button from "../../shared/components/Button";
@@ -80,6 +81,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Estado para menú móvil
 
   const navigate = useNavigate();
+  const auth = useAuth();
 
   // 1) Cargar productos UNA sola vez desde /api/products
   useEffect(() => {
@@ -257,11 +259,21 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   Productos
                 </Link>
                 <Link
-                  to="/cart"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Carrito de compras ({totalItemsInCart})
-                </Link>
+  to="/cart"
+  className="relative px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+>
+  {/* Icono */}
+  <span className="text-xl">&#128722;</span>
+
+  {/* Badge rojo */}
+  {totalItemsInCart > 0 && (
+    <span
+      className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full"
+    >
+      {totalItemsInCart}
+    </span>
+  )}
+</Link>
               </nav>
             </div>
 
@@ -298,22 +310,45 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-2">
-              <Button
-                type="button"
-                variant="default"
-                onClick= {openLogin}
-                className="px-4 py-2 text-sm"
-              >
-                Iniciar Sesión
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={()=> navigate('/signup')}
-                className="px-4 py-2 text-sm"
-              >
-                Registrarse
-              </Button>
+              {(() => {
+                const { isAuthenticated, singout } = auth;
+                if (isAuthenticated) {
+                  return (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        singout();
+                        navigate('/');
+                      }}
+                      className="px-4 py-2 text-sm"
+                    >
+                      Cerrar sesión
+                    </Button>
+                  );
+                }
+
+                return (
+                  <>
+                    <Button
+                      type="button"
+                      variant="default"
+                      onClick={openLogin}
+                      className="px-4 py-2 text-sm"
+                    >
+                      Iniciar Sesión
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => navigate('/signup')}
+                      className="px-4 py-2 text-sm"
+                    >
+                      Registrarse
+                    </Button>
+                  </>
+                );
+              })()}
             </div>
            
             {/* Mobile Menu Button */}
@@ -367,35 +402,61 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                   Productos
                 </Link>
                 <Link
-                  to="/cart"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Carrito de compras ({totalItemsInCart})
-                </Link>
+  to="/cart"
+  className="relative px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+>
+  {/* Icono */}
+  <span className="text-xl">&#128722;</span>
+
+  {/* Badge rojo */}
+  {totalItemsInCart > 0 && (
+    <span
+      className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full"
+    >
+      {totalItemsInCart}
+    </span>
+  )}
+</Link>
                 <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    variant="default"
-                    onClick={() => {
-                      openLogin();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm"
-                  >
-                    Iniciar Sesión
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      navigate('/signup');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm"
-                  >
-                    Registrarse
-                  </Button>
+                  {auth.isAuthenticated ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        auth.singout();
+                        setMobileMenuOpen(false);
+                        navigate('/');
+                      }}
+                      className="w-full px-4 py-2 text-sm"
+                    >
+                      Cerrar sesión
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={() => {
+                          openLogin();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-sm"
+                      >
+                        Iniciar Sesión
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          navigate('/signup');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-sm"
+                      >
+                        Registrarse
+                      </Button>
+                    </>
+                  )}
                 </div>
               </nav>
             </div>
@@ -544,11 +605,11 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
         {/* Modales de Autenticación */}
         <Modal isOpen={isLoginOpen} onClose={closeAll}>
-          <LoginForm />
+          <LoginForm onClose={closeAll} />
         </Modal>
 
         <Modal isOpen={isRegisterOpen} onClose={closeAll}>
-          <RegisterForm isModal={true} />
+          <RegisterForm isModal={true} onClose={closeAll} />
         </Modal>
       </div>
     </div>

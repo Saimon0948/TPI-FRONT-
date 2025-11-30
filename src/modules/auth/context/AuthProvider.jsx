@@ -23,6 +23,9 @@ function AuthProvider({ children }) {
     }
 
     // data may be a token string or an object containing token and user info
+    if (data.customerId) {
+      localStorage.setItem('customerId', data.customerId); 
+  }
     let token = null;
     if (typeof data === 'string') token = data;
     else token = data?.token ?? data?.accessToken ?? null;
