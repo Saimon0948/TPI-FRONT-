@@ -205,9 +205,9 @@ const updateQuantity = (id, delta) => {
                       <p className="text-sm text-gray-500 mt-1">Precio: ${item.unitPrice.toLocaleString()}</p>
                       
                       <div className="flex items-center mt-3">
-                        <button onClick={() => updateQuantity(item.quantity, -1)} className="w-7 h-7 bg-gray-100 border rounded font-bold text-gray-600">-</button>
+                        <button onClick={() => updateQuantity(item.productId, -1)} className="w-7 h-7 bg-gray-100 border rounded font-bold text-gray-600">-</button>
                         <span className="px-3 text-gray-800 text-sm font-medium">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.quantity, 1)} className="w-7 h-7 bg-gray-100 border rounded font-bold text-gray-600">+</button>
+                        <button onClick={() => updateQuantity(item.productId, 1)} className="w-7 h-7 bg-gray-100 border rounded font-bold text-gray-600">+</button>
                       </div>
                    </div>
                    <div className="flex flex-col justify-between items-end h-full">

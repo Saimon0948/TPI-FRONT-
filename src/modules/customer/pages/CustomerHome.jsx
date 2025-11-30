@@ -369,14 +369,16 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                     >
                       Iniciar Sesión
                     </Button>
-                    <Button
+                   
+                    {/* <Button
                       type="button"
                       variant="secondary"
                       onClick={() => navigate('/signup')}
                       className="px-4 py-2 text-sm"
                     >
                       Registrarse
-                    </Button>
+                    </Button> */}
+                    
                   </>
                 );
               })()}
@@ -475,7 +477,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                       >
                         Iniciar Sesión
                       </Button>
-                      <Button
+                      {/* <Button
                         type="button"
                         variant="secondary"
                         onClick={() => {
@@ -485,7 +487,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                         className="w-full px-4 py-2 text-sm"
                       >
                         Registrarse
-                      </Button>
+                      </Button> */}
                     </>
                   )}
                 </div>
