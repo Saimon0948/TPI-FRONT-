@@ -126,10 +126,14 @@ function LoginForm({onClose}) {
         error={errors.password?.message}
       />
 
-      <Button type='submit'>
+      <Button
+      
+      type='submit'>
                 Iniciar Sesión
       </Button>
-      <Button variant='secondary' onClick={openRegister}>Registrar Usuario</Button>
+      <Button 
+      
+      variant='secondary' onClick={openRegister}>Registrar Usuario</Button>
       {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
     </form>
 

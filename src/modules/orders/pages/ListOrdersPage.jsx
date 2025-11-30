@@ -245,17 +245,17 @@ function ListOrdersPage() {
 
       {/* Paginación */}
       <div className="flex justify-center items-center mt-3 gap-3">
-        <button
+        <Button
           disabled={pageNumber === 1}
           onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Atrás
-        </button>
+        </Button>
 
         <span>{pageNumber} / {totalPages}</span>
 
-        <button
+        <Button
           disabled={pageNumber === totalPages}
           onClick={() =>
             setPageNumber((p) => Math.min(totalPages, p + 1))
@@ -263,7 +263,7 @@ function ListOrdersPage() {
           className="bg-gray-200 disabled:bg-gray-100 px-3 py-1"
         >
           Siguiente
-        </button>
+        </Button>
 
         <select
           value={pageSize}

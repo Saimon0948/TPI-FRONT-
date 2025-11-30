@@ -101,15 +101,15 @@ function CreateProductForm() {
             },
           })}
         />
-        <div className='sm:text-end flex sm:justify-end sm:items-center sm:gap-2'>
-          <Button type='submit' className='w-full sm:w-fit'>Crear Producto</Button>
+        <div className='flex flex-col gap-2 sm:text-end sm:flex-row sm:justify-end sm:items-center sm:gap-2'>
+          <Button type='submit' className='w-full px-3 py-2 text-sm sm:w-fit sm:px-4 sm:py-2'>Crear Producto</Button>
           <Button
-        type='button'
-        onClick={() => navigate(-1)}
-        className=' sm:w-fit left-2 '
-     >
-        Volver
-      </Button>
+            type='button'
+            onClick={() => navigate(-1)}
+            className='w-full px-3 py-2 text-sm sm:w-fit sm:px-4 sm:py-2'
+          >
+            Volver
+          </Button>
         </div>
         {errorBackendMessage && <span className='text-red-500'>{errorBackendMessage}</span>}
       </form>

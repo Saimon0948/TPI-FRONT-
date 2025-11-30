@@ -8,7 +8,7 @@ const Modal = ({ isOpen, onClose, children }) => {
     <div className="fixed inset-0  bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
       
      
-      <div className="relative">
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md max-h-full overflow-y-auto">
         
         <button
           onClick={onClose}

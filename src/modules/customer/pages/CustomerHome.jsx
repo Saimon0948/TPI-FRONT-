@@ -586,14 +586,14 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                               }
                               className="w-12 h-8 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-200"
                             />
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleQuantityChange(product, 1)}
                               disabled={quantity >= availableStock}
                               className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               +
-                            </button>
+                            </Button>
                             <Button
                               type="button"
                               onClick={() => handleAddToCart(product)}
@@ -615,17 +615,19 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
                     <Button
                       disabled={currentPage <= 1}
                       onClick={() => setCurrentPage((p) => p - 1)}
+                      variant="default"
                     >
                       Anterior
                     </Button>
 
-                    <span className="px-4">
+                    <span className="px-4 text-sm sm:w-fit sm:px-4 sm:py-2" >
                       Página {currentPage} de {totalPages}
                     </span>
 
                     <Button
                       disabled={currentPage >= totalPages}
                       onClick={() => setCurrentPage((p) => p + 1)}
+                      variant="default"
                     >
                       Siguiente
                     </Button>

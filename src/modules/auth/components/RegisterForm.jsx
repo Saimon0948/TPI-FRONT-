@@ -154,7 +154,9 @@ function RegisterForm({ onClose, onSwitchToLogin, isModal = false }) {
           />
                    
 
-        <Button type='submit'>Registrar</Button>
+        <Button type='submit'
+        className="text-sm sm:w-fit sm:px-4 sm:py-2"
+        >Registrar</Button>
 
         {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
 

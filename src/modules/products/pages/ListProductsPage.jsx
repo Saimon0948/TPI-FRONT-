@@ -150,21 +150,24 @@ function ListProductsPage() {
       </div>
 
       <div className='flex justify-center items-center mt-3'>
-        <button
+        <Button
           disabled={pageNumber === 1}
           onClick={() => setPageNumber(pageNumber - 1)}
-          className='bg-gray-200 disabled:bg-gray-100 px-3 py-1 rounded'
+          variant='default'
+          
         >
           Atras
-        </button>
-        <span className='mx-3'>{pageNumber} / {totalPages}</span>
-        <button
+        </Button>
+        
+        <span className='mx-3 sm:px-4 sm:py-2 sm:w-fit text-sm'>{pageNumber} / {totalPages}</span>
+        <Button
           disabled={ pageNumber === totalPages }
           onClick={() => setPageNumber(pageNumber + 1)}
-          className='bg-gray-200 disabled:bg-gray-100 px-3 py-1 rounded'
+          variant='default'
+        
         >
           Siguiente
-        </button>
+        </Button>
 
         <select
           value={pageSize}
