@@ -110,6 +110,37 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     fetchProducts();
   }, []);
 
+  // 1.5) Sincronizar carrito cuando vuelve a la página (después de checkout)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const stored = localStorage.getItem(CART_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setCart(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("Error parsing cart", e);
+          setCart([]);
+        }
+      } else {
+        setCart([]);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleStorageChange();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // 2) Búsqueda por nombre (en frontend)
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();

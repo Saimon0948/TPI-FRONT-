@@ -22,7 +22,7 @@ function AuthProvider({ children }) {
       return { error };
     }
 
-    // data may be a token string or an object containing token and user info
+//guardar customerId si existe
     if (data.customerId) {
       localStorage.setItem('customerId', data.customerId); 
   }
