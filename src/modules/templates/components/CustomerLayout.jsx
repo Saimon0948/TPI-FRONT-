@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import Button from "../../shared/components/Button";
 import { Outlet } from "react-router-dom";
 import { useCart } from "../../shared/hook/useCart";
@@ -7,15 +7,18 @@ import LoginForm from "../../auth/components/LoginForm";
 import RegisterForm from "../../auth/components/RegisterForm";
 import Modal from "../../shared/components/Modal";
 
-
+ 
 function CustomerLayout({ auth, search, onSearch }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cartItemsCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const openLogin = () => {
+  const isHome = location.pathname === "/";
+  const isCart = location.pathname === "/cart";  const openLogin = () => {
     setIsRegisterOpen(false);
     setIsLoginOpen(true);
   };
@@ -28,6 +31,10 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const closeAll = () => {
     setIsLoginOpen(false);
     setIsRegisterOpen(false);
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
   };
   return (
     <div>
@@ -51,13 +58,21 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
             <nav className="hidden md:flex items-center gap-4">
               <Link
                 to="/"
-                className="px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-gray-900"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isHome 
+                    ? "bg-purple-200 " 
+                    : " text-gray-900 hover:bg-purple-200"
+                }`}
               >
                 Productos
               </Link>
               <Link
                 to="/cart"
-                className="relative px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className={`relative px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isCart 
+                    ? "bg-purple-200" 
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
               >
                 <span className="text-xl">&#128722;</span>
                 {cartItemsCount > 0 && (
@@ -75,8 +90,8 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
               <input
                 type="text"
                 placeholder="Search"
-                value={search}
-                onChange={onSearch}
+                value={searchTerm}
+                onChange={handleSearch}
                 className="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-transparent"
               />
               <Button
@@ -174,14 +189,22 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-gray-900"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isHome 
+                    ? "bg-purple-200 text-white" 
+                    : "bg-purple-100 text-gray-900 hover:bg-purple-200"
+                }`}
               >
                 Productos
               </Link>
               <Link
                 to="/cart"
                 onClick={() => setMobileMenuOpen(false)}
-                className="relative px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className={`relative px-3 py-2 rounded-md text-sm font-medium transition ${
+                  isCart 
+                    ? "bg-purple-200 text-white" 
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
               >
                 <span className="text-xl">&#128722;</span>
                 {cartItemsCount > 0 && (
@@ -225,8 +248,7 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
         </div>
     </header>
     <main className="flex-1 p-6 bg-gray-50">
-
-        <Outlet/>
+        <Outlet context={{ searchTerm }} />
     </main>
 
     {/* Modales de Autenticación */}

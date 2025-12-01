@@ -8,10 +8,10 @@ import ListOrdersPage from './modules/orders/pages/ListOrdersPage';
 import Home from './modules/home/pages/Home';
 import ListProductsPage from './modules/products/pages/ListProductsPage';
 import CreateProductPage from './modules/products/pages/CreateProductPage';
-import CustomerHome from './modules/customer/pages/CustomerHome';
 import RegisterPage from './modules/auth/pages/RegisterPage';
 import CartPage from './modules/customer/pages/CartPage';
 import CustomerLayout from './modules/templates/components/CustomerLayout';
+import ProductList from './modules/customer/components/ProductList';
 function App() {
   const router = createBrowserRouter([
   {
@@ -20,7 +20,7 @@ function App() {
     children: [
       {
         index: true, // ruta '/'
-        element: <CustomerHome />,
+        element: <ProductList />,
       },
       {
         path: 'cart',

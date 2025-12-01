@@ -72,6 +72,8 @@ const CartPage = () => {
     localStorage.removeItem(CART_KEY);
     setCart([]);
     setPendingCheckout(false); // Limpiar flag
+    // Disparar evento para actualizar el badge
+    window.dispatchEvent(new Event('cartUpdated'));
     alert('¡Compra finalizada con éxito!');
     navigate('/'); // Redirigir al listado (Home)
   };
@@ -111,11 +113,15 @@ const updateQuantity = (id, delta) => {
     });
     setCart(newCart);
     localStorage.setItem(CART_KEY, JSON.stringify(newCart));
+    // Disparar evento para actualizar el badge
+    window.dispatchEvent(new Event('cartUpdated'));
   };
   const removeItem = (id) => {
     const newCart = cart.filter(item => item.productId !== id);
     setCart(newCart);
     localStorage.setItem(CART_KEY, JSON.stringify(newCart));
+    // Disparar evento para actualizar el badge
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   if (cart.length === 0) {

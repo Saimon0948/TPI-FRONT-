@@ -1,183 +1,84 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import useAuth from '../../auth/hook/useAuth';
-import { getCustomerProducts } from "../services/products";
+import { useOutletContext } from "react-router-dom"; 
+import { getCustomerProducts } from "../services/products"; // Asegúrate que la ruta sea correcta
 import Card from "../../shared/components/Card";
 import Button from "../../shared/components/Button";
-import Modal from "../../shared/components/Modal";
-import RegisterForm from "../../auth/components/RegisterForm";
-import LoginForm from "../../auth/components/LoginForm";
 
 const CART_KEY = "cart";
-const PAGE_SIZE = 8; // 4 columnas x2 filas
+const PAGE_SIZE = 8;
 
+// --- Helper Functions ---
+function getProductId(product) { return product?.Id ?? product?.id ?? null; }
+function getProductName(product) { return product?.Name ?? product?.name ?? ""; }
+function getProductPrice(product) { return product?.CurrentUnitPrice ?? product?.price ?? 0; }
+function getProductStock(product) { return product?.StockQuantity ?? product?.stockQuantity ?? product?.stock ?? 0; }
 
-// Helper functions para acceder a los campos del producto
-function getProductId(product) {
-  return product?.Id ?? product?.id ?? null;
-}
-
-function getProductName(product) {
-  return product?.Name ?? product?.name ?? "";
-}
-
-function getProductPrice(product) {
-  return product?.CurrentUnitPrice ?? product?.price ?? 0;
-}
-
-function getProductStock(product) {
-  return product?.StockQuantity ?? product?.stockQuantity ?? product?.stock ?? 0;
-}
-
-function getInitialCart() {
+function getCartFromStorage() {
   try {
     const stored = localStorage.getItem(CART_KEY);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-
-    return Array.isArray(parsed)
-      ? parsed.map((item) => ({
-          ...item,
-          quantity: item.quantity && item.quantity > 0 ? item.quantity : 1,
-        }))
-      : [];
+    return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
-function saveCart(cart) {
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
-}
-
-const CustomerHome = () => {
-  
-//Modales de Login y Register
-const [isLoginOpen, setIsLoginOpen] = useState(false);
-const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-
-  const openLogin = () => {
-    setIsRegisterOpen(false);
-    setIsLoginOpen(true);
-  };
-
-  const openRegister = () => {
-    setIsLoginOpen(false);
-    setIsRegisterOpen(true);
-  };
-
-  const closeAll = () => {
-    setIsLoginOpen(false);
-    setIsRegisterOpen(false);
-  };
+const ProductList = () => {
+  // Recibimos el término de búsqueda desde el Layout
+  const { searchTerm } = useOutletContext() || { searchTerm: "" };
 
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState(getInitialCart);
-  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState(getCartFromStorage); // Necesitamos leer el carrito para validar stock
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [quantities, setQuantities] = useState({}); // Estado para cantidades por producto
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Estado para menú móvil
+  const [quantities, setQuantities] = useState({}); 
 
-  const navigate = useNavigate();
-  const auth = useAuth();
+  // Sincronizar carrito para validar stock en tiempo real
+  useEffect(() => {
+    const handleStorageChange = () => setCart(getCartFromStorage());
+    window.addEventListener('cartUpdated', handleStorageChange); // Escuchamos nuestro evento personalizado
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('cartUpdated', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
-  // 1) Cargar productos UNA sola vez desde /api/products
+  // Cargar Productos
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      setError("");
-
       const { data, error } = await getCustomerProducts();
-
       if (error) {
         setError("No se pudieron cargar los productos.");
-        setLoading(false);
-        return;
-      }
-
-      // /api/products devuelve un array plano
-      if (Array.isArray(data)) {
-        setProducts(data);
       } else {
-        setProducts(data.items ?? []);
+        setProducts(Array.isArray(data) ? data : data.items ?? []);
       }
-
       setLoading(false);
     };
-
     fetchProducts();
   }, []);
 
-  // 1.5) Sincronizar carrito cuando vuelve a la página (después de checkout)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const stored = localStorage.getItem(CART_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setCart(Array.isArray(parsed) ? parsed : []);
-        } catch (e) {
-          console.error("Error parsing cart", e);
-          setCart([]);
-        }
-      } else {
-        setCart([]);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        handleStorageChange();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  // 2) Guardar el total de items del carrito en sessionStorage y disparar evento
-  useEffect(() => {
-    const totalItems = cart.reduce((acc, item) => acc + (item.quantity || 0), 0);
-    sessionStorage.setItem('cartItemsCount', totalItems.toString());
-    
-    // Disparar evento personalizado para que CartContext se entere del cambio
-    window.dispatchEvent(new Event('cartUpdated'));
-  }, [cart]);
-
-  // 2) Búsqueda por nombre (en frontend)
+  // Filtrado y Paginación
   const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = searchTerm.trim().toLowerCase();
     if (!term) return products;
+    return products.filter((p) => getProductName(p).toLowerCase().includes(term));
+  }, [products, searchTerm]);
 
-    return products.filter((p) =>
-      getProductName(p).toLowerCase().includes(term)
-    );
-  }, [products, search]);
+  // Resetear página si cambia la búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
-  // 3) Paginación en frontend
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProducts.length / PAGE_SIZE)
-  );
-
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  
   const pagedProducts = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredProducts.slice(start, start + PAGE_SIZE);
   }, [filteredProducts, currentPage]);
 
-  // Resetear a página 1 cuando cambia la búsqueda
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
-  };
-
-  // 4) Obtener stock disponible considerando lo que ya está en el carrito
+  // Lógica de Stock y Cantidades
   const getAvailableStock = (product) => {
     const stock = getProductStock(product);
     const productId = getProductId(product);
@@ -186,15 +87,12 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     return Math.max(0, stock - quantityInCart);
   };
 
-  // 5) Manejar cantidad por producto con validación de stock
   const handleQuantityChange = (product, delta) => {
     const productId = getProductId(product);
     const availableStock = getAvailableStock(product);
-    
     setQuantities((prev) => {
       const current = prev[productId] || 0;
-      const newQuantity = Math.max(0, Math.min(availableStock, current + delta));
-      return { ...prev, [productId]: newQuantity };
+      return { ...prev, [productId]: Math.max(0, Math.min(availableStock, current + delta)) };
     });
   };
 
@@ -202,78 +100,49 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     const productId = getProductId(product);
     const availableStock = getAvailableStock(product);
     const numValue = parseInt(value, 10) || 0;
-    const clampedValue = Math.max(0, Math.min(availableStock, numValue));
-    
-    setQuantities((prev) => ({
-      ...prev,
-      [productId]: clampedValue,
-    }));
+    setQuantities((prev) => ({ ...prev, [productId]: Math.max(0, Math.min(availableStock, numValue)) }));
   };
 
-  // 6) Agregar al carrito con la cantidad seleccionada y validación de stock
   const handleAddToCart = (product) => {
     const productId = getProductId(product);
     const quantity = quantities[productId] || 0;
 
     if (quantity <= 0) {
-      setError("Seleccioná una cantidad mayor a 0.");
-      setTimeout(() => setError(""), 2000);
-      return;
+        alert("Selecciona una cantidad mayor a 0");
+        return;
     }
 
-    // Validar stock disponible
-    const availableStock = getAvailableStock(product);
-    if (quantity > availableStock) {
-      setError(`No hay suficiente stock disponible. Stock disponible: ${availableStock}`);
-      setTimeout(() => setError(""), 3000);
-      return;
-    }
+    const currentCart = getCartFromStorage();
+    const existingItemIndex = currentCart.findIndex(item => item.productId === productId);
 
-    setCart((prev) => {
-      const existing = prev.find((item) => item.productId === productId);
-
-      let nextCart;
-      if (existing) {
-        const newTotalQuantity = existing.quantity + quantity;
-        // Validar nuevamente antes de actualizar
-        if (newTotalQuantity > getProductStock(product)) {
-          setError(`No se puede agregar. La cantidad total excedería el stock disponible (${getProductStock(product)} unidades)`);
-          setTimeout(() => setError(""), 3000);
-          return prev; // No actualizar el carrito
-        }
-        nextCart = prev.map((item) =>
-          item.productId === productId
-            ? { ...item, quantity: newTotalQuantity }
-            : item
-        );
-      } else {
-        nextCart = [
-          ...prev,
-          {
-            productId: productId,
+    let newCart;
+    if (existingItemIndex >= 0) {
+        newCart = [...currentCart];
+        newCart[existingItemIndex].quantity += quantity;
+    } else {
+        newCart = [...currentCart, {
+            productId,
             name: getProductName(product),
             unitPrice: getProductPrice(product),
-            quantity,
-          },
-        ];
-      }
+            quantity
+        }];
+    }
 
-      saveCart(nextCart);
-      return nextCart;
-    });
-
-    // Resetear cantidad después de agregar
+    localStorage.setItem(CART_KEY, JSON.stringify(newCart));
+    
+    // Disparar evento para avisar al Layout que actualice el badge
+    window.dispatchEvent(new Event("cartUpdated"));
+    
+    // Actualizar estado local del carrito para recálculo de stock
+    setCart(newCart);
     setQuantities((prev) => ({ ...prev, [productId]: 0 }));
   };
 
-  
+  if (loading) return <div className="text-center py-8">Cargando...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      
-      
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Loading / Error */}
         {loading && (
@@ -412,18 +281,8 @@ const [isRegisterOpen, setIsRegisterOpen] = useState(false);
             )}
           </>
         )}
-
-        {/* Modales de Autenticación */}
-        <Modal isOpen={isLoginOpen} onClose={closeAll}>
-          <LoginForm onClose={closeAll} />
-        </Modal>
-
-        <Modal isOpen={isRegisterOpen} onClose={closeAll}>
-          <RegisterForm isModal={true} onClose={closeAll} />
-        </Modal>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default CustomerHome;
+export default ProductList;
