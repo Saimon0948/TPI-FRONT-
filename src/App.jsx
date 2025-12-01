@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './modules/auth/context/AuthProvider';
+import { CartProvider } from './modules/shared/context/CartContext';
 import LoginPage from './modules/auth/pages/LoginPage';
 import Dashboard from './modules/templates/components/Dashboard';
 import ProtectedRoute from './modules/auth/components/ProtectedRoute';
@@ -10,11 +11,12 @@ import CreateProductPage from './modules/products/pages/CreateProductPage';
 import CustomerHome from './modules/customer/pages/CustomerHome';
 import RegisterPage from './modules/auth/pages/RegisterPage';
 import CartPage from './modules/customer/pages/CartPage';
+import CustomerLayout from './modules/templates/components/CustomerLayout';
 function App() {
   const router = createBrowserRouter([
   {
     path: '/',
-    element: <Outlet />,
+    element: <CustomerLayout />,
     children: [
       {
         index: true, // ruta '/'
@@ -64,7 +66,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <CartProvider>
+        <RouterProvider router={router} />
+      </CartProvider>
     </AuthProvider>
   );
 }

@@ -11,7 +11,7 @@ function AuthProvider({ children }) {
   });
 
   const singout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
     setIsAuthenticated(false);
   };
 
@@ -22,7 +22,7 @@ function AuthProvider({ children }) {
       return { error };
     }
 
-//guardar customerId si existe
+//guardar customerId 
     if (data.customerId) {
       localStorage.setItem('customerId', data.customerId); 
   }
