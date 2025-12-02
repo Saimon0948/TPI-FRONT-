@@ -6,9 +6,10 @@ import { useCart } from "../../shared/hook/useCart";
 import LoginForm from "../../auth/components/LoginForm";
 import RegisterForm from "../../auth/components/RegisterForm";
 import Modal from "../../shared/components/Modal";
-
+import useAuth from "../../auth/hook/useAuth";
  
 function CustomerLayout({ auth, search, onSearch }) {
+  const { isAuthenticated, singout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cartItemsCount } = useCart();
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ function CustomerLayout({ auth, search, onSearch }) {
   const isCart = location.pathname === "/cart";  const openLogin = () => {
     setIsRegisterOpen(false);
     setIsLoginOpen(true);
+  };
+  const handleLogout = () => {
+    singout(); 
+    navigate('/login'); 
   };
 
   const openRegister = () => {
@@ -117,34 +122,26 @@ function CustomerLayout({ auth, search, onSearch }) {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-2">
-            {auth?.isAuthenticated ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  auth.singout();
-                  navigate("/");
-                }}
-                className="px-4 py-2 text-sm"
-              >
-                Cerrar sesión
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={openLogin}
-                  className="px-4 py-2 text-sm"
-                >
-                  Iniciar Sesión
-                </Button>
-              </>
-            )}
-          </div>
+                {isAuthenticated ? (
+                  // SI ESTÁ LOGUEADO: Muestra botón Cerrar Sesión
+                  <Button 
+                    onClick={handleLogout} 
+                    variant="secondary" 
+                    size="sm"
+                    className="bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  >
+                    Cerrar Sesión
+                  </Button>
+                ) : (
+                  // SI NO ESTÁ LOGUEADO: Muestra botón Ingresar
+                  <Button onClick={openLogin} size="sm">
+                    Iniciar Sesión
+                  </Button>
+                )}
+              </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <Button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-200"
@@ -179,7 +176,7 @@ function CustomerLayout({ auth, search, onSearch }) {
                 />
               </svg>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Menu */}
@@ -232,7 +229,7 @@ function CustomerLayout({ auth, search, onSearch }) {
                     type="button"
                     variant="default"
                     onClick={() => {
-                      onLoginClick();
+                      openLogin();
                       setMobileMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 text-sm"

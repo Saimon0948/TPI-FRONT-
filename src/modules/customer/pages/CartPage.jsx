@@ -71,7 +71,7 @@ const CartPage = () => {
     // Éxito: Limpiar y redirigir
     localStorage.removeItem(CART_KEY);
     setCart([]);
-    setPendingCheckout(false); // Limpiar flag
+    setPendingCheckout(false); 
     // Disparar evento para actualizar el badge
     window.dispatchEvent(new Event('cartUpdated'));
     alert('¡Compra finalizada con éxito!');
